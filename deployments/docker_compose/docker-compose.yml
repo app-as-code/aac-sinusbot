@@ -1,0 +1,79 @@
+services:
+  # --- Main Application Service ---
+  aac-sinusbot:
+    image: "sinusbot/docker:1.0.2-discord"
+    container_name: "aac-sinusbot"
+    hostname: "sinusbot"
+    restart: "always"
+
+
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "Europe/Berlin"
+      UID: "1000"
+      GID: "1000"
+      SINUSBOT_PORT: "8087"
+      SINUSBOT_MEMORY_LIMIT: "512M"
+      OVERRIDE_PASSWORD: "${OVERRIDE_PASSWORD:?set OVERRIDE_PASSWORD in .env (see .env.example)}"
+    ports:
+      - "28087:8087/tcp"
+
+    volumes:
+      - "/export/docker/aac-sinusbot/scripts:/opt/sinusbot/scripts"
+      - "/export/docker/aac-sinusbot/data:/opt/sinusbot/data"
+
+    networks:
+      - exposed
+      - interconnect
+      - secured
+      - stack_internal
+
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.aac-sinusbot.rule: "Host(`sinusbot.example.com`)"
+      traefik.http.routers.aac-sinusbot.entrypoints: "websecure"
+      traefik.http.routers.aac-sinusbot.tls: "true"
+      traefik.http.routers.aac-sinusbot.tls.certresolver: "ionos"
+      traefik.docker.network: "services-secured"
+      traefik.http.services.aac-sinusbot.loadbalancer.server.port: "8087"
+      traefik.http.services.aac-sinusbot.loadbalancer.server.scheme: "http"
+      auto-dns.createWildcard.aac-sinusbot: "false"
+      auto-dns.customDNS.aac-sinusbot: "true"
+      auto-dns.customDOMAIN.aac-sinusbot: "example.com"
+      auto-dns.customHost.aac-sinusbot: "sinusbot"
+      homepage.group: "Admin - Tools"
+      homepage.name: "Sinusbot"
+      homepage.href: "https://sinusbot.example.com"
+      homepage.icon: "sinusbot.png"
+      homepage.description: "TS / Discord Musikbot"
+
+
+    security_opt:
+    - seccomp:unconfined
+    cap_add:
+    - SYS_NICE
+    - NET_ADMIN
+    privileged: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '10'
+
+
+
+networks:
+  secured:
+    name: "services-secured"
+    external: true
+  exposed:
+    name: "services-exposed"
+    external: true
+  interconnect:
+    name: "docker-default"
+    external: true
+  stack_internal:
+    name: "aac-sinusbot_stack_internal"
+    driver: "bridge"
+

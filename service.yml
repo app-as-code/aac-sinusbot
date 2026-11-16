@@ -1,0 +1,94 @@
+service:
+  name: aac-sinusbot
+  image_repo: sinusbot/docker
+  image_tag: 1.0.2-discord
+  description: TS / Discord Musikbot
+  icon: sinusbot.png
+  category: Admin - Tools
+  stage: prod
+  hostname: sinusbot
+ports:
+- name: web
+  port: 8087
+  external_port: 28087
+  protocol: TCP
+config:
+  domain_name: example.com
+  generate_hostname: false
+  integrations:
+    homepage:
+      enabled: true
+    autodns:
+      enabled: true
+    traefik:
+      enabled: true
+      cert_resolver: ionos
+      entrypoint: websecure
+  schema_version: 2
+stage_overrides:
+  prod:
+    service:
+      hostname: sinusbot
+    config:
+      generate_hostname: false
+secrets:
+  OVERRIDE_PASSWORD: CHANGE_ME
+volumes:
+  scripts:
+    description: SinusBot custom scripts
+  data:
+    description: SinusBot main data and configuration
+deployment_strategy:
+  main:
+    enabled: true
+    target_stage: prod
+  dev:
+    enabled: true
+    target_stage: dev
+  test:
+    enabled: false
+    target_stage: test
+  ansible-dev:
+    enabled: true
+    target_stage: dev
+  iac-dev:
+    enabled: true
+    target_stage: dev
+  template-dev:
+    enabled: true
+    target_stage: dev
+deployments:
+  docker_compose:
+    restart_policy: always
+    host_base_path: /export/docker
+    security_opt:
+    - seccomp:unconfined
+    cap_add:
+    - SYS_NICE
+    - NET_ADMIN
+    privileged: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '10'
+    volumes:
+    - scripts:/opt/sinusbot/scripts
+    - data:/opt/sinusbot/data
+    environment:
+      PUID: '{{ vars.PUID }}'
+      PGID: '{{ vars.PGID }}'
+      TZ: '{{ vars.TZ }}'
+      UID: '{{ vars.UID }}'
+      GID: '{{ vars.GID }}'
+      SINUSBOT_PORT: '{{ vars.SINUSBOT_PORT }}'
+      SINUSBOT_MEMORY_LIMIT: '{{ vars.SINUSBOT_MEMORY_LIMIT }}'
+      OVERRIDE_PASSWORD: '{{ secrets.OVERRIDE_PASSWORD }}'
+vars:
+  PUID: '1000'
+  PGID: '1000'
+  TZ: Europe/Berlin
+  UID: '1000'
+  GID: '1000'
+  SINUSBOT_PORT: '8087'
+  SINUSBOT_MEMORY_LIMIT: 512M
